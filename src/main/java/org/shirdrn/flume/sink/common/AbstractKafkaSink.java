@@ -22,6 +22,8 @@ public abstract class AbstractKafkaSink<K, V> extends AbstractSink implements Co
 	private static final Log LOG = LogFactory.getLog(AbstractKafkaSink.class);
 	
 	protected static final String PARTITION_KEY = "partition.key";
+	protected static final String REQUEST_REQUIRED_ACKS = "request.required.acks";
+	protected static final String REQUEST_TIMEOUT_MS = "request.timeout.ms";
 	protected static final String BROKER_LIST = "metadata.broker.list";
     protected static final String SERIALIZER_CLASS = "serializer.class";
     protected static final String BATCH_NUM_MESSAGES = "batch.num.messages";
@@ -35,6 +37,8 @@ public abstract class AbstractKafkaSink<K, V> extends AbstractSink implements Co
     protected static final String DEFAULT_SERIALIZER_CLASS = "kafka.serializer.DefaultEncoder";
     protected static final String DEFAULT_PRODUCER_TYPE = ProducerType.SYNC.getType();
     protected static final int DEFAULT_MESSAGE_SEND_MAX_RETRIES = 3;
+    protected static final int DEFAULT_REQUEST_REQUIRED_ACKS = 0;
+    protected static final int DEFAULT_REQUEST_TIMEOUT_MS = 10000;
     protected static final int DEFAULT_BATCH_NUM_MESSAGES = 200;
     protected static final int DEFAULT_SEND_BUFFER_BYTES = 100 * 1024;
     protected static final int DEFAULT_QUEUE_ENQUEUE_TIMEOUT_MS = -1;
@@ -48,6 +52,8 @@ public abstract class AbstractKafkaSink<K, V> extends AbstractSink implements Co
     protected String serializerClass = DEFAULT_SERIALIZER_CLASS;
     protected String clientId;
     
+    protected int requestRequiredAcks = DEFAULT_REQUEST_REQUIRED_ACKS;
+    protected int requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS;
     protected int sendBufferBytes = DEFAULT_SEND_BUFFER_BYTES;
     protected int batchNumMessages = DEFAULT_BATCH_NUM_MESSAGES;
     protected int messageSendMaxRetries = DEFAULT_MESSAGE_SEND_MAX_RETRIES;
@@ -76,26 +82,25 @@ public abstract class AbstractKafkaSink<K, V> extends AbstractSink implements Co
         	}
         }
         
-        String configMessageSendMaxRetries = this.context.getParameters().get(MESSAGE_SEND_MAX_RETRIES);
-        int maxRetries = 0;
-        try {
-			maxRetries = Integer.parseInt(configMessageSendMaxRetries);
-		} catch (Exception e) {
-			maxRetries = messageSendMaxRetries;
-		}
-        if(maxRetries > 0) {
-        	messageSendMaxRetries = maxRetries;
+        messageSendMaxRetries = this.context.getInteger(MESSAGE_SEND_MAX_RETRIES, DEFAULT_MESSAGE_SEND_MAX_RETRIES);
+        if(messageSendMaxRetries <= 0) {
+        	messageSendMaxRetries = DEFAULT_MESSAGE_SEND_MAX_RETRIES;
         }
         
         String configSerializerClass = this.context.getParameters().get(SERIALIZER_CLASS);
         if(configSerializerClass != null) {
         	serializerClass = configSerializerClass;
         }
+        
+        requestRequiredAcks = this.context.getInteger(REQUEST_REQUIRED_ACKS, DEFAULT_REQUEST_REQUIRED_ACKS);
+        requestTimeoutMs = this.context.getInteger(REQUEST_TIMEOUT_MS, DEFAULT_REQUEST_TIMEOUT_MS);
     }
     
     protected Properties createOriginalProps() {
     	Properties props = new Properties();
     	props.setProperty(BROKER_LIST, brokerList);
+    	props.setProperty(REQUEST_REQUIRED_ACKS, String.valueOf(requestRequiredAcks));
+    	props.setProperty(REQUEST_TIMEOUT_MS, String.valueOf(requestTimeoutMs));
     	props.setProperty(CLIENT_ID, clientId);
     	props.setProperty(PRODUCER_TYPE, producerType);
     	props.setProperty(SERIALIZER_CLASS, serializerClass);
