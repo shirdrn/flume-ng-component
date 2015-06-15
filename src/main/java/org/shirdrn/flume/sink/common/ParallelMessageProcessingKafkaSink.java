@@ -30,7 +30,7 @@ import com.google.common.collect.Lists;
  * @param <K>
  * @param <V>
  */
-public abstract class ParallelMessageProcessingKafkaSink<K, V> extends AbstractKafkaSink<K, V> {
+public class ParallelMessageProcessingKafkaSink<K, V> extends AbstractKafkaSink<K, V> {
 
 	private static final Log LOG = LogFactory.getLog(ParallelMessageProcessingKafkaSink.class);
 	private static final String DEFAULT_ENCODING = "UTF-8";
@@ -144,7 +144,7 @@ public abstract class ParallelMessageProcessingKafkaSink<K, V> extends AbstractK
     				// use non-blocking mode
 					String message = rawMessageQueue.poll();
 					if(message != null) {
-						KeyedMessage<K, V> keyedMessage = rawMessageProcessor.process(message);
+						KeyedMessage<K, V> keyedMessage = rawMessageProcessor.process(topic, message);
 						if(keyedMessage != null) {
 							keyedMessageQueue.add(keyedMessage);
 						}

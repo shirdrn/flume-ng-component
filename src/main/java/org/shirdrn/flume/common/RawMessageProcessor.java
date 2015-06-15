@@ -18,5 +18,5 @@ import kafka.producer.KeyedMessage;
  */
 public interface RawMessageProcessor<K, V> {
 
-	KeyedMessage<K, V> process(String message);
+	KeyedMessage<K, V> process(String topic, String message);
 }
