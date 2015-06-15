@@ -38,7 +38,7 @@ public class SharpTimeRollingFileSink extends AbstractSink implements Configurab
 	private String serializerType;
 	private Context serializerContext;
 	private EventSerializer serializer;
-
+	private volatile boolean stop = false;
 	private SinkCounter sinkCounter;
 
 	private PathManager pathController;
@@ -46,7 +46,7 @@ public class SharpTimeRollingFileSink extends AbstractSink implements Configurab
 	private String filePrefix;
 	private String fileSuffix;
 	private String filePattern;
-	private volatile boolean forceRotate;
+	private volatile boolean shouldRotate;
 	private String forceRotateType;
 
 	@Override
@@ -93,7 +93,7 @@ public class SharpTimeRollingFileSink extends AbstractSink implements Configurab
 
 	@Override
 	public Status process() throws EventDeliveryException {
-		if (forceRotate) {
+		if (shouldRotate) {
 			logger.debug("Time to rotate {}", pathController.getCurrentFile());
 			if (outputStream != null) {
 				logger.debug("Closing file {}", pathController.getCurrentFile());
@@ -103,7 +103,7 @@ public class SharpTimeRollingFileSink extends AbstractSink implements Configurab
 					serializer.beforeClose();
 					outputStream.close();
 					sinkCounter.incrementConnectionClosedCount();
-					forceRotate = false;
+					shouldRotate = false;
 				} catch (IOException e) {
 					sinkCounter.incrementConnectionFailedCount();
 					throw new EventDeliveryException("Unable to rotate file " + pathController.getCurrentFile() + " while delivering event", e);
@@ -170,14 +170,14 @@ public class SharpTimeRollingFileSink extends AbstractSink implements Configurab
 
 		@Override
 		public void run() {
-			while (true) {
+			while (!stop) {
 				try {
-					if (!forceRotate) {
+					if (!shouldRotate) {
 						logger.debug("Decide next sharp time, current:" + TimeUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
 						long waitTime = nextSharpTimeDistance();
 						Thread.sleep(Math.max(1L, waitTime - 3));
 						logger.debug("Trigger rotation, current:" + TimeUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
-						forceRotate = true;
+						shouldRotate = true;
 					} else {
 						Thread.sleep(200);
 					}
@@ -222,6 +222,7 @@ public class SharpTimeRollingFileSink extends AbstractSink implements Configurab
 				serializer = null;
 			}
 		}
+		stop = true;
 		logger.info("RollingFile sink {} stopped. Event metrics: {}", getName(), sinkCounter);
 	}
 
