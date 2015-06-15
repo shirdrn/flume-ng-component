@@ -40,29 +40,38 @@ public class TimeUtils {
 	}
 	
 	@SuppressWarnings("deprecation")
-	public static long getNextHour(Date date) {
+	public static long toNextDay(long timestamp) {
+		Calendar calendar = Calendar.getInstance();
+		calendar.add(Calendar.DATE, 1);
+		Date d = calendar.getTime();
+		d.setHours(0);
+		d.setMinutes(0);
+		d.setSeconds(0);
+		return d.getTime() - timestamp;
+	}
+	
+	@SuppressWarnings("deprecation")
+	public static long toNextHour(long timestamp) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.add(Calendar.HOUR_OF_DAY, 1);
 		Date d = calendar.getTime();
 		d.setMinutes(0);
 		d.setSeconds(0);
-		System.out.println("date=" + date + ", d=" + d);
-		return d.getTime() - date.getTime();
+		return d.getTime() - timestamp;
 	}
 	
 	@SuppressWarnings("deprecation")
-	public static long getNextMinute(Date date) {
+	public static long toNextMinute(long timestamp) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.add(Calendar.MINUTE, 1);
 		Date d = calendar.getTime();
 		d.setSeconds(0);
-		System.out.println("date=" + date + ", d=" + d);
-		return d.getTime() - date.getTime();
+		return d.getTime() - timestamp;
 	}
 	
 	public static void main(String[] args) {
-		Date date = new Date();
-		System.out.println(getNextHour(date));
-		System.out.println(getNextMinute(date));
+		System.out.println(toNextDay(System.currentTimeMillis()));
+		System.out.println(toNextHour(System.currentTimeMillis()));
+		System.out.println(toNextMinute(System.currentTimeMillis()));
 	}
 }

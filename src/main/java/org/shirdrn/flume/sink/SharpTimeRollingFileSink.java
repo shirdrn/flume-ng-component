@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.flume.Channel;
@@ -24,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 
 public class SharpTimeRollingFileSink extends AbstractSink implements Configurable {
 
@@ -48,6 +50,14 @@ public class SharpTimeRollingFileSink extends AbstractSink implements Configurab
 	private String filePattern;
 	private volatile boolean shouldRotate;
 	private String forceRotateType;
+	
+	private static Map<String, TimeDistanceCalculator> ROTATE_TIME_UNIT_TYPES = Maps.newHashMap();
+	
+	static {
+		ROTATE_TIME_UNIT_TYPES.put("D", new DayDistanceCalculator());
+		ROTATE_TIME_UNIT_TYPES.put("H", new HourDistanceCalculator());
+		ROTATE_TIME_UNIT_TYPES.put("M", new MinuteDistanceCalculator());
+	}
 
 	@Override
 	public void configure(Context context) {
@@ -72,8 +82,12 @@ public class SharpTimeRollingFileSink extends AbstractSink implements Configurab
 		filePrefix = context.getString("sink.file.prefix", "prefix");
 		fileSuffix = context.getString("sink.file.suffix", ".txt");
 		filePattern = context.getString("sink.file.pattern", "yyyyMMddHHmmss");
-		// H-hour; M-minute; S-second
+		
+		// D-day; H-hour; M-minute
 		forceRotateType = context.getString("sink.file.force.rotate.type", "H").toUpperCase();
+		if(!ROTATE_TIME_UNIT_TYPES.keySet().contains(forceRotateType)) {
+			throw new RuntimeException("Unknown rotation time unit type: " + forceRotateType + "!");
+		}
 	}
 
 	@Override
@@ -174,7 +188,7 @@ public class SharpTimeRollingFileSink extends AbstractSink implements Configurab
 				try {
 					if (!shouldRotate) {
 						logger.debug("Decide next sharp time, current:" + TimeUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
-						long waitTime = nextSharpTimeDistance();
+						long waitTime = ROTATE_TIME_UNIT_TYPES.get(forceRotateType).calculate(System.currentTimeMillis());
 						Thread.sleep(Math.max(1L, waitTime - 3));
 						logger.debug("Trigger rotation, current:" + TimeUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
 						shouldRotate = true;
@@ -187,17 +201,6 @@ public class SharpTimeRollingFileSink extends AbstractSink implements Configurab
 			}
 		}
 
-		private long nextSharpTimeDistance() {
-			long waitTime = 0;
-			if (forceRotateType.equalsIgnoreCase("H")) {
-				// hour
-				waitTime = (int) TimeUtils.getNextHour(new Date());
-			} else if (forceRotateType.equalsIgnoreCase("M")) {
-				// minute
-				waitTime = (int) TimeUtils.getNextMinute(new Date());
-			}
-			return waitTime;
-		}
 	}
 
 	@Override
@@ -275,6 +278,37 @@ public class SharpTimeRollingFileSink extends AbstractSink implements Configurab
 			return fileIndex;
 		}
 
+	}
+	
+	interface TimeDistanceCalculator {
+		long calculate(long timestamp);
+	}
+	
+	private static final class DayDistanceCalculator implements TimeDistanceCalculator {
+
+		@Override
+		public long calculate(long timestamp) {
+			return TimeUtils.toNextDay(timestamp);
+		}
+		
+	}
+	
+	private static final class HourDistanceCalculator implements TimeDistanceCalculator {
+
+		@Override
+		public long calculate(long timestamp) {
+			return TimeUtils.toNextHour(timestamp);
+		}
+		
+	}
+	
+	private static final class MinuteDistanceCalculator implements TimeDistanceCalculator {
+
+		@Override
+		public long calculate(long timestamp) {
+			return TimeUtils.toNextMinute(timestamp);
+		}
+		
 	}
 
 }
