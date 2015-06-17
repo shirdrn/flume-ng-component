@@ -79,12 +79,12 @@ public class SharpTimeRollingFileSink extends AbstractSink implements Configurab
 			sinkCounter = new SinkCounter(getName());
 		}
 
-		filePrefix = context.getString("sink.file.prefix", "prefix");
-		fileSuffix = context.getString("sink.file.suffix", ".txt");
-		filePattern = context.getString("sink.file.pattern", "yyyyMMddHHmmss");
+		filePrefix = context.getString("sink.filePrefix", "prefix");
+		fileSuffix = context.getString("sink.fileSuffix", ".txt");
+		filePattern = context.getString("sink.filePattern", "yyyyMMddHHmmss");
 		
 		// D-day; H-hour; M-minute
-		forceRotateType = context.getString("sink.file.force.rotate.type", "H").toUpperCase();
+		forceRotateType = context.getString("sink.fileRotateType", "H").toUpperCase();
 		if(!ROTATE_TIME_UNIT_TYPES.keySet().contains(forceRotateType)) {
 			throw new RuntimeException("Unknown rotation time unit type: " + forceRotateType + "!");
 		}
