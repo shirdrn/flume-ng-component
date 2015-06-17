@@ -1,4 +1,4 @@
-package org.shirdrn.flume.sink.common;
+package org.shirdrn.flume.common.sink;
 
 import java.util.List;
 import java.util.Properties;

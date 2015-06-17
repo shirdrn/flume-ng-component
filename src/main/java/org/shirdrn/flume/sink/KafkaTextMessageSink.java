@@ -10,7 +10,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
-import org.shirdrn.flume.sink.common.AbstractKafkaSink;
+import org.shirdrn.flume.common.sink.AbstractKafkaSink;
 
 public class KafkaTextMessageSink extends AbstractKafkaSink<String, String> {
 
