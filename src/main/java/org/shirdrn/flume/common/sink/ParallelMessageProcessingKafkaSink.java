@@ -101,7 +101,8 @@ public class ParallelMessageProcessingKafkaSink<K, V> extends AbstractKafkaSink<
         ProducerConfig config = new ProducerConfig(props);
         
         // start event decoder
-        messageProcessorExecutorService = Executors.newFixedThreadPool(rawMessageProcessorCount, new NamedThreadFactory("PROCESSOR"));
+        messageProcessorExecutorService = 
+        		Executors.newFixedThreadPool(rawMessageProcessorCount, new NamedThreadFactory("PROCESSOR"));
         for (int i = 0; i < rawMessageProcessorCount; i++) {
         	InternalMessageProcessorWorker decoder = new InternalMessageProcessorWorker();
         	messageProcessorExecutorService.execute(decoder);
